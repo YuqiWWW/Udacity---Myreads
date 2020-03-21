@@ -2,7 +2,8 @@ import React from 'react'
 // import * as BooksAPI from './BooksAPI'
 import './App.css'
 import Book from './Book'
-import {update, search} from './BooksAPI'
+import { update, search } from './BooksAPI'
+import { Link, Route } from 'react-router-dom'
 
 class BooksApp extends React.Component {
   state = {
@@ -12,7 +13,6 @@ class BooksApp extends React.Component {
      * users can use the browser's back and forward buttons to navigate between
      * pages, as well as provide a good URL they can bookmark and share.
      */
-    showSearchPage: false,
     localBooks: [
       {
         name: 'To Kill a Mockingbird',
@@ -70,7 +70,7 @@ class BooksApp extends React.Component {
   }
 
   componentDidMount() {
-    if(! window.localStorage){
+    if (!window.localStorage) {
       alert("Browser doesn't support Localstorage");
       this.setState((prevState) => ({
         books: prevState.books.concat(prevState.localBooks)
@@ -90,10 +90,10 @@ class BooksApp extends React.Component {
         books: prevState.books.concat(localB)
       }));
     }
-  
+
   }
 
-  handleShelf= (b, s) => {
+  handleShelf = (b, s) => {
     // console.log(name + ', ' + s);
     if (!b.shelf) {  // the book doesn't exist yet
       let newbook = {
@@ -124,17 +124,20 @@ class BooksApp extends React.Component {
     // console.log(q);
     search(q).then((books) => {
       console.log(books);
-      this.setState({searchBooks: books});
+      this.setState({ searchBooks: books });
     });
   }
 
   render() {
     return (
       <div className="app">
-        {this.state.showSearchPage ? (
-          <div className="search-books">
+
+        <Route exact path='/search' render={() => {
+          return (<div className="search-books">
             <div className="search-books-bar">
-              <button className="close-search" onClick={() => this.setState({ showSearchPage: false })}>Close</button>
+                <Link to='/'>
+                <button className="close-search">Close</button></Link>
+              
               <div className="search-books-input-wrapper">
                 {/*
                   NOTES: The search from BooksAPI is limited to a particular set of search terms.
@@ -144,62 +147,69 @@ class BooksApp extends React.Component {
                   However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
                   you don't find a specific author or title. Every search is limited by search terms.
                 */}
-                <input type="text" placeholder="Search by title or author" onChange={(e) => this.handleQuery(e.target.value)}/>
+                <input type="text" placeholder="Search by title or author" onChange={(e) => this.handleQuery(e.target.value)} />
 
               </div>
             </div>
             <div className="search-books-results">
               <ol className="books-grid">
                 {Array.isArray(this.state.searchBooks) && this.state.searchBooks.length !== 0 && this.state.searchBooks.map((book) => (
-                  <Book key={book.id} url={'url("' + book.imageLinks.thumbnail + ')"'} onShelf={this.handleShelf} book={book} name={book.title} author={book.authors}/>
-                ))} 
+                  <Book key={book.id} url={'url("' + book.imageLinks.thumbnail + ')"'} onShelf={this.handleShelf} book={book} name={book.title} author={book.authors} />
+                ))}
               </ol>
             </div>
-          </div>
-        ) : (
-          <div className="list-books">
-            <div className="list-books-title">
-              <h1>MyReads</h1>
-            </div>
-            <div className="list-books-content">
-              <div>
-                <div className="bookshelf">
-                  <h2 className="bookshelf-title">Currently Reading</h2>
-                  <div className="bookshelf-books">
-                    <ol className="books-grid">
-                      {this.state.books.filter((book) => book.shelf === "currentlyReading").map((book, index) => (
-                        <Book key={index} book={book} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
-                      ))}
-                    </ol>
+          </div>)
+        }} />
+
+        <Route exact path='/' render={() => {
+          return (
+            <div className="list-books">
+              <div className="list-books-title">
+                <h1>MyReads</h1>
+              </div>
+              <div className="list-books-content">
+                <div>
+                  <div className="bookshelf">
+                    <h2 className="bookshelf-title">Currently Reading</h2>
+                    <div className="bookshelf-books">
+                      <ol className="books-grid">
+                        {this.state.books.filter((book) => book.shelf === "currentlyReading").map((book, index) => (
+                          <Book key={index} book={book} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author} />
+                        ))}
+                      </ol>
+                    </div>
                   </div>
-                </div>
-                <div className="bookshelf">
-                  <h2 className="bookshelf-title">Want to Read</h2>
-                  <div className="bookshelf-books">
-                    <ol className="books-grid">
-                    {this.state.books.filter((book) => book.shelf === "wantToRead").map((book, index) => (
-                        <Book key={index} book={book} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
-                      ))}
-                    </ol>
+                  <div className="bookshelf">
+                    <h2 className="bookshelf-title">Want to Read</h2>
+                    <div className="bookshelf-books">
+                      <ol className="books-grid">
+                        {this.state.books.filter((book) => book.shelf === "wantToRead").map((book, index) => (
+                          <Book key={index} book={book} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author} />
+                        ))}
+                      </ol>
+                    </div>
                   </div>
-                </div>
-                <div className="bookshelf">
-                  <h2 className="bookshelf-title">Read</h2>
-                  <div className="bookshelf-books">
-                    <ol className="books-grid">
-                    {this.state.books.filter((book) => book.shelf === "read").map((book, index) => (
-                        <Book key={index} book={book} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
-                      ))}
-                    </ol>
+                  <div className="bookshelf">
+                    <h2 className="bookshelf-title">Read</h2>
+                    <div className="bookshelf-books">
+                      <ol className="books-grid">
+                        {this.state.books.filter((book) => book.shelf === "read").map((book, index) => (
+                          <Book key={index} book={book} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author} />
+                        ))}
+                      </ol>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="open-search">
-              <button onClick={() => this.setState({ showSearchPage: true })}>Add a book</button>
-            </div>
-          </div>
-        )}
+              <div className="open-search">
+                <Link className="open-search" to='/search'>
+                  <button>
+                    Add a book
+                </button>
+                </Link>
+              </div>
+            </div>)
+        }} />
       </div>
     )
   }
