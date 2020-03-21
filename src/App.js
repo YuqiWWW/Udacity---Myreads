@@ -2,7 +2,7 @@ import React from 'react'
 // import * as BooksAPI from './BooksAPI'
 import './App.css'
 import Book from './Book'
-import {getAll, update, search} from './BooksAPI'
+import {update, search} from './BooksAPI'
 
 class BooksApp extends React.Component {
   state = {
@@ -78,13 +78,12 @@ class BooksApp extends React.Component {
       return;
     } else {
       let storage = window.localStorage;
-      // for (let i = 0; i < this.state.localBooks.length; i++) {
-      //   // update(book, book.shelf).then(() => console.log('Adding books successfully!')).catch(() => console.log("Failed to add " + book.name + " initially."));
-      //   storage.setItem(i+1, JSON.stringify(this.state.localBooks[i]));
-      // }
       let localB = [];
-      for (let i = 0; i < this.state.localBooks.length; i++) {
-        localB.push(JSON.parse(storage.getItem(i+1)));
+      for (let i = 0; i < storage.length; i++) {
+        if (storage.key(i) !== "token") {
+          localB.push(JSON.parse(storage.getItem(storage.key(i))));
+        }
+        // localB.push(JSON.parse(storage.getItem(i+1)));
         // console.log(storage.getItem(storage.key(i)));
       }
       this.setState((prevState) => ({
@@ -94,23 +93,37 @@ class BooksApp extends React.Component {
   
   }
 
-  handleShelf= (name, s) => {
+  handleShelf= (b, s) => {
     // console.log(name + ', ' + s);
-    let temp;
-    this.setState((prevState) => ({
-      books: prevState.books.map((book) => {
-        if (book.name === name) {
-          book.shelf = s;
-          window.localStorage.setItem(book.id, JSON.stringify(book));
-        }
-        return book;
-      })
-    }));
+    if (!b.shelf) {  // the book doesn't exist yet
+      let newbook = {
+        name: b.title,
+        author: b.authors,
+        id: b.id,
+        shelf: s,
+        url: 'url("' + b.imageLinks.thumbnail + ')"'
+      };
+      this.setState((prevState) => ({
+        books: prevState.books.concat([newbook])
+      }));
+      window.localStorage.setItem(b.id, JSON.stringify(newbook));
+    } else {  // the book exist on main page
+      this.setState((prevState) => ({
+        books: prevState.books.map((book) => {
+          if (book.id === b.id) {
+            book.shelf = s;
+            window.localStorage.setItem(b.id, JSON.stringify(book));
+          }
+          return book;
+        })
+      }));
+    }
   }
 
   handleQuery(q) {
     // console.log(q);
     search(q).then((books) => {
+      console.log(books);
       this.setState({searchBooks: books});
     });
   }
@@ -137,8 +150,8 @@ class BooksApp extends React.Component {
             </div>
             <div className="search-books-results">
               <ol className="books-grid">
-                {this.state.searchBooks && this.state.searchBooks.length !== 0 && this.state.searchBooks.map((book) => (
-                  <Book key={book.id} name={book.title} author={book.authors}/>
+                {Array.isArray(this.state.searchBooks) && this.state.searchBooks.length !== 0 && this.state.searchBooks.map((book) => (
+                  <Book key={book.id} url={'url("' + book.imageLinks.thumbnail + ')"'} onShelf={this.handleShelf} book={book} name={book.title} author={book.authors}/>
                 ))} 
               </ol>
             </div>
@@ -155,7 +168,7 @@ class BooksApp extends React.Component {
                   <div className="bookshelf-books">
                     <ol className="books-grid">
                       {this.state.books.filter((book) => book.shelf === "currentlyReading").map((book, index) => (
-                        <Book key={index} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
+                        <Book key={index} book={book} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
                       ))}
                     </ol>
                   </div>
@@ -165,7 +178,7 @@ class BooksApp extends React.Component {
                   <div className="bookshelf-books">
                     <ol className="books-grid">
                     {this.state.books.filter((book) => book.shelf === "wantToRead").map((book, index) => (
-                        <Book key={index} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
+                        <Book key={index} book={book} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
                       ))}
                     </ol>
                   </div>
@@ -175,7 +188,7 @@ class BooksApp extends React.Component {
                   <div className="bookshelf-books">
                     <ol className="books-grid">
                     {this.state.books.filter((book) => book.shelf === "read").map((book, index) => (
-                        <Book key={index} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
+                        <Book key={index} book={book} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
                       ))}
                     </ol>
                   </div>
