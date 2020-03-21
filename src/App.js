@@ -1,8 +1,8 @@
 import React from 'react'
 // import * as BooksAPI from './BooksAPI'
 import './App.css'
-import PlaceChanger from './PlaceChanger'
 import Book from './Book'
+import {getAll, update, search} from './BooksAPI'
 
 class BooksApp extends React.Component {
   state = {
@@ -12,7 +12,107 @@ class BooksApp extends React.Component {
      * users can use the browser's back and forward buttons to navigate between
      * pages, as well as provide a good URL they can bookmark and share.
      */
-    showSearchPage: false
+    showSearchPage: false,
+    localBooks: [
+      {
+        name: 'To Kill a Mockingbird',
+        author: 'Harper Lee',
+        url: 'url("http://books.google.com/books/content?id=PGR2AwAAQBAJ&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE73-GnPVEyb7MOCxDzOYF1PTQRuf6nCss9LMNOSWBpxBrz8Pm2_mFtWMMg_Y1dx92HT7cUoQBeSWjs3oEztBVhUeDFQX6-tWlWz1-feexS0mlJPjotcwFqAg6hBYDXuK_bkyHD-y&source=gbs_api")',
+        shelf: "currentlyReading",
+        id: 1
+      },
+      {
+        name: "Ender's Game",
+        author: 'Orson Scott Card',
+        url: 'url("http://books.google.com/books/content?id=yDtCuFHXbAYC&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE72RRiTR6U5OUg3IY_LpHTL2NztVWAuZYNFE8dUuC0VlYabeyegLzpAnDPeWxE6RHi0C2ehrR9Gv20LH2dtjpbcUcs8YnH5VCCAH0Y2ICaKOTvrZTCObQbsfp4UbDqQyGISCZfGN&source=gbs_api")',
+        shelf: "currentlyReading",
+        id: 2
+      },
+      {
+        name: '1776',
+        author: 'David McCullough',
+        url: 'url("http://books.google.com/books/content?id=uu1mC6zWNTwC&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE73pGHfBNSsJG9Y8kRBpmLUft9O4BfItHioHolWNKOdLavw-SLcXADy3CPAfJ0_qMb18RmCa7Ds1cTdpM3dxAGJs8zfCfm8c6ggBIjzKT7XR5FIB53HHOhnsT7a0Cc-PpneWq9zX&source=gbs_api")',
+        shelf: "wantToRead",
+        id: 3
+      },
+      {
+        name: "Harry Potter and the Sorcerer's Stone",
+        author: 'J.K. Rowling',
+        url: 'url("http://books.google.com/books/content?id=wrOQLV6xB-wC&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE72G3gA5A-Ka8XjOZGDFLAoUeMQBqZ9y-LCspZ2dzJTugcOcJ4C7FP0tDA8s1h9f480ISXuvYhA_ZpdvRArUL-mZyD4WW7CHyEqHYq9D3kGnrZCNiqxSRhry8TiFDCMWP61ujflB&source=gbs_api")',
+        shelf: "wantToRead",
+        id: 4
+      },
+      {
+        name: 'The Hobbit',
+        author: 'J.R.R. Tolkien',
+        url: 'url("http://books.google.com/books/content?id=pD6arNyKyi8C&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE70Rw0CCwNZh0SsYpQTkMbvz23npqWeUoJvVbi_gXla2m2ie_ReMWPl0xoU8Quy9fk0Zhb3szmwe8cTe4k7DAbfQ45FEzr9T7Lk0XhVpEPBvwUAztOBJ6Y0QPZylo4VbB7K5iRSk&source=gbs_api")',
+        shelf: "read",
+        id: 5
+      },
+      {
+        name: "Oh, the Places You'll Go!",
+        author: 'Seuss',
+        url: 'url("http://books.google.com/books/content?id=1q_xAwAAQBAJ&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE712CA0cBYP8VKbEcIVEuFJRdX1k30rjLM29Y-dw_qU1urEZ2cQ42La3Jkw6KmzMmXIoLTr50SWTpw6VOGq1leINsnTdLc_S5a5sn9Hao2t5YT7Ax1RqtQDiPNHIyXP46Rrw3aL8&source=gbs_api")',
+        shelf: "read",
+        id: 6
+      },
+      {
+        name: 'The Adventures of Tom Sawyer',
+        author: 'Mark Twain',
+        url: 'url("http://books.google.com/books/content?id=32haAAAAMAAJ&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE72yckZ5f5bDFVIf7BGPbjA0KYYtlQ__nWB-hI_YZmZ-fScYwFy4O_fWOcPwf-pgv3pPQNJP_sT5J_xOUciD8WaKmevh1rUR-1jk7g1aCD_KeJaOpjVu0cm_11BBIUXdxbFkVMdi&source=gbs_api")',
+        shelf: "read",
+        id: 7
+      }
+    ],
+    books: [],
+    searchBooks: [],
+    query: ''
+  }
+
+  componentDidMount() {
+    if(! window.localStorage){
+      alert("Browser doesn't support Localstorage");
+      this.setState((prevState) => ({
+        books: prevState.books.concat(prevState.localBooks)
+      }));
+      return;
+    } else {
+      let storage = window.localStorage;
+      // for (let i = 0; i < this.state.localBooks.length; i++) {
+      //   // update(book, book.shelf).then(() => console.log('Adding books successfully!')).catch(() => console.log("Failed to add " + book.name + " initially."));
+      //   storage.setItem(i+1, JSON.stringify(this.state.localBooks[i]));
+      // }
+      let localB = [];
+      for (let i = 0; i < this.state.localBooks.length; i++) {
+        localB.push(JSON.parse(storage.getItem(i+1)));
+        // console.log(storage.getItem(storage.key(i)));
+      }
+      this.setState((prevState) => ({
+        books: prevState.books.concat(localB)
+      }));
+    }
+  
+  }
+
+  handleShelf= (name, s) => {
+    // console.log(name + ', ' + s);
+    let temp;
+    this.setState((prevState) => ({
+      books: prevState.books.map((book) => {
+        if (book.name === name) {
+          book.shelf = s;
+          window.localStorage.setItem(book.id, JSON.stringify(book));
+        }
+        return book;
+      })
+    }));
+  }
+
+  handleQuery(q) {
+    // console.log(q);
+    search(q).then((books) => {
+      this.setState({searchBooks: books});
+    });
   }
 
   render() {
@@ -31,12 +131,16 @@ class BooksApp extends React.Component {
                   However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
                   you don't find a specific author or title. Every search is limited by search terms.
                 */}
-                <input type="text" placeholder="Search by title or author"/>
+                <input type="text" placeholder="Search by title or author" onChange={(e) => this.handleQuery(e.target.value)}/>
 
               </div>
             </div>
             <div className="search-books-results">
-              <ol className="books-grid"></ol>
+              <ol className="books-grid">
+                {this.state.searchBooks && this.state.searchBooks.length !== 0 && this.state.searchBooks.map((book) => (
+                  <Book key={book.id} name={book.title} author={book.authors}/>
+                ))} 
+              </ol>
             </div>
           </div>
         ) : (
@@ -50,10 +154,9 @@ class BooksApp extends React.Component {
                   <h2 className="bookshelf-title">Currently Reading</h2>
                   <div className="bookshelf-books">
                     <ol className="books-grid">
-                      <Book url='url("http://books.google.com/books/content?id=PGR2AwAAQBAJ&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE73-GnPVEyb7MOCxDzOYF1PTQRuf6nCss9LMNOSWBpxBrz8Pm2_mFtWMMg_Y1dx92HT7cUoQBeSWjs3oEztBVhUeDFQX6-tWlWz1-feexS0mlJPjotcwFqAg6hBYDXuK_bkyHD-y&source=gbs_api")'
-                            name='To Kill a Mockingbird' author='Harper Lee'/>
-                      <Book url='url("http://books.google.com/books/content?id=yDtCuFHXbAYC&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE72RRiTR6U5OUg3IY_LpHTL2NztVWAuZYNFE8dUuC0VlYabeyegLzpAnDPeWxE6RHi0C2ehrR9Gv20LH2dtjpbcUcs8YnH5VCCAH0Y2ICaKOTvrZTCObQbsfp4UbDqQyGISCZfGN&source=gbs_api")'
-                      name="Ender's Game" author='Orson Scott Card' />
+                      {this.state.books.filter((book) => book.shelf === "currentlyReading").map((book, index) => (
+                        <Book key={index} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
+                      ))}
                     </ol>
                   </div>
                 </div>
@@ -61,10 +164,9 @@ class BooksApp extends React.Component {
                   <h2 className="bookshelf-title">Want to Read</h2>
                   <div className="bookshelf-books">
                     <ol className="books-grid">
-                      <Book url='url("http://books.google.com/books/content?id=uu1mC6zWNTwC&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE73pGHfBNSsJG9Y8kRBpmLUft9O4BfItHioHolWNKOdLavw-SLcXADy3CPAfJ0_qMb18RmCa7Ds1cTdpM3dxAGJs8zfCfm8c6ggBIjzKT7XR5FIB53HHOhnsT7a0Cc-PpneWq9zX&source=gbs_api")'
-                            name='1776' author='David McCullough' />
-                      <Book url='url("http://books.google.com/books/content?id=wrOQLV6xB-wC&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE72G3gA5A-Ka8XjOZGDFLAoUeMQBqZ9y-LCspZ2dzJTugcOcJ4C7FP0tDA8s1h9f480ISXuvYhA_ZpdvRArUL-mZyD4WW7CHyEqHYq9D3kGnrZCNiqxSRhry8TiFDCMWP61ujflB&source=gbs_api")'
-                            name="Harry Potter and the Sorcerer's Stone" author='J.K. Rowling' />
+                    {this.state.books.filter((book) => book.shelf === "wantToRead").map((book, index) => (
+                        <Book key={index} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
+                      ))}
                     </ol>
                   </div>
                 </div>
@@ -72,12 +174,9 @@ class BooksApp extends React.Component {
                   <h2 className="bookshelf-title">Read</h2>
                   <div className="bookshelf-books">
                     <ol className="books-grid">
-                      <Book url='url("http://books.google.com/books/content?id=pD6arNyKyi8C&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE70Rw0CCwNZh0SsYpQTkMbvz23npqWeUoJvVbi_gXla2m2ie_ReMWPl0xoU8Quy9fk0Zhb3szmwe8cTe4k7DAbfQ45FEzr9T7Lk0XhVpEPBvwUAztOBJ6Y0QPZylo4VbB7K5iRSk&source=gbs_api")'
-                            name='The Hobbit' author='J.R.R. Tolkien' />
-                      <Book url='url("http://books.google.com/books/content?id=1q_xAwAAQBAJ&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE712CA0cBYP8VKbEcIVEuFJRdX1k30rjLM29Y-dw_qU1urEZ2cQ42La3Jkw6KmzMmXIoLTr50SWTpw6VOGq1leINsnTdLc_S5a5sn9Hao2t5YT7Ax1RqtQDiPNHIyXP46Rrw3aL8&source=gbs_api")'
-                            name="Oh, the Places You'll Go!" author='Seuss' />
-                      <Book url='url("http://books.google.com/books/content?id=32haAAAAMAAJ&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE72yckZ5f5bDFVIf7BGPbjA0KYYtlQ__nWB-hI_YZmZ-fScYwFy4O_fWOcPwf-pgv3pPQNJP_sT5J_xOUciD8WaKmevh1rUR-1jk7g1aCD_KeJaOpjVu0cm_11BBIUXdxbFkVMdi&source=gbs_api")'
-                            name='The Adventures of Tom Sawyer' author='Mark Twain' />
+                    {this.state.books.filter((book) => book.shelf === "read").map((book, index) => (
+                        <Book key={index} onShelf={this.handleShelf} url={book.url} name={book.name} author={book.author}/>
+                      ))}
                     </ol>
                   </div>
                 </div>
